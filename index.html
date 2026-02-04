@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lúmina Accesorios</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="container topbar__row">
+      <a class="brand" href="#">
+        <span class="brand__mark">L</span>
+        <span class="brand__name">Lúmina</span>
+        <span class="brand__tag">Accesorios</span>
+      </a>
+
+      <div class="search">
+        <input id="searchInput" type="search" placeholder="Buscar pulseras, anillos..." autocomplete="off" />
+        <button id="clearSearchBtn" class="ghost" type="button" aria-label="Limpiar búsqueda">✕</button>
+      </div>
+
+      <button id="cartOpenBtn" class="cartBtn" type="button" aria-label="Abrir carrito">
+        🛍️ <span class="cartBtn__count" id="cartCount">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container hero__grid">
+      <div class="hero__copy">
+        <p class="pill">Nueva colección • Acero / Plata / Cuero</p>
+        <h1>Accesorios elegantes que elevan tu estilo.</h1>
+        <p class="muted">
+          Manillas, pulseras y anillos diseñados para durar. Compra fácil, rápido y seguro.
+        </p>
+        <div class="hero__cta">
+          <a href="#shop" class="btn">Ver catálogo</a>
+          <button id="openFeaturedBtn" class="btn btn--soft" type="button">Ver destacados</button>
+        </div>
+
+        <div class="hero__stats">
+          <div class="stat">
+            <div class="stat__num">+120</div>
+            <div class="stat__label">Productos</div>
+          </div>
+          <div class="stat">
+            <div class="stat__num">24–48h</div>
+            <div class="stat__label">Envío nacional</div>
+          </div>
+          <div class="stat">
+            <div class="stat__num">4.8★</div>
+            <div class="stat__label">Reseñas</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__card" aria-hidden="true">
+        <div class="hero__img">
+          <!-- Fondo elegante con “brillo” en CSS -->
+          <div class="shine"></div>
+          <div class="ring"></div>
+          <div class="bracelet"></div>
+          <div class="label">
+            <span class="label__title">Colección Aurora</span>
+            <span class="label__sub">Minimal • Premium</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Shop -->
+  <main class="container" id="shop">
+    <section class="toolbar">
+      <div class="toolbar__left">
+        <h2>Catálogo</h2>
+        <p class="muted" id="resultsHint">Explora nuestros accesorios.</p>
+      </div>
+
+      <div class="toolbar__right">
+  <button id="filtersToggleBtn" class="iconBtn filtersToggle" type="button">
+    Filtros ▾
+  </button>
+
+  <div id="filtersPanel" class="filtersPanel">
+    <select id="categorySelect" class="select" aria-label="Filtrar por categoría">
+      <option value="all">Todas</option>
+      <option value="manillas">Manillas</option>
+      <option value="pulseras">Pulseras</option>
+      <option value="anillos">Anillos</option>
+      <option value="collares">Collares</option>
+    </select>
+
+    <select id="sortSelect" class="select" aria-label="Ordenar">
+      <option value="featured">Destacados</option>
+      <option value="priceAsc">Precio: menor a mayor</option>
+      <option value="priceDesc">Precio: mayor a menor</option>
+      <option value="nameAsc">Nombre: A → Z</option>
+    </select>
+  </div>
+</div>
+
+    </section>
+
+    <section class="grid" id="productsGrid" aria-live="polite"></section>
+  </main>
+
+  <!-- Drawer Carrito -->
+  <aside class="drawer" id="cartDrawer" aria-hidden="true">
+    <div class="drawer__backdrop" id="cartBackdrop"></div>
+
+    <div class="drawer__panel" role="dialog" aria-modal="true" aria-label="Carrito de compras">
+      <div class="drawer__head">
+        <div>
+          <h3>Tu carrito</h3>
+          <p class="muted" id="cartSub">0 artículos</p>
+        </div>
+        <button class="iconBtn" id="cartCloseBtn" type="button" aria-label="Cerrar carrito">✕</button>
+      </div>
+
+      <div class="drawer__body" id="cartItems"></div>
+
+      <div class="drawer__foot">
+        <div class="totals">
+          <div class="totals__row">
+            <span>Subtotal</span>
+            <strong id="subtotal">$0</strong>
+          </div>
+          <div class="totals__row">
+            <span>Envío</span>
+            <span class="muted" id="shipping">$0</span>
+          </div>
+          <div class="divider"></div>
+          <div class="totals__row totals__row--big">
+            <span>Total</span>
+            <strong id="total">$0</strong>
+          </div>
+        </div>
+
+        <button id="checkoutBtn" class="btn btn--full" type="button">Finalizar compra</button>
+        <button id="clearCartBtn" class="btn btn--soft btn--full" type="button">Vaciar carrito</button>
+
+        <p class="tiny muted">Checkout de ejemplo (sin pasarela real). Ideal para conectar a Stripe/MercadoPago luego.</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Modal producto -->
+  <div class="modal" id="productModal" aria-hidden="true">
+    <div class="modal__backdrop" id="modalBackdrop"></div>
+    <div class="modal__panel" role="dialog" aria-modal="true" aria-label="Detalle del producto">
+      <button class="iconBtn modal__close" id="modalCloseBtn" aria-label="Cerrar">✕</button>
+      <div class="modal__content" id="modalContent"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" aria-live="polite" aria-atomic="true"></div>
+
+  <footer class="footer">
+    <div class="container footer__grid">
+      <div>
+        <div class="footer__brand">Lúmina Accesorios</div>
+        <p class="muted">Hecho con diseño minimal y enfoque mobile-first.</p>
+      </div>
+      <div class="footer__links">
+        <a href="#shop">Catálogo</a>
+        <a href="#">Envíos</a>
+        <a href="#">Cambios</a>
+        <a href="#">Contacto</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
