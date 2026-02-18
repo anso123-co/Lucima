@@ -1,495 +1,596 @@
-// ======= Datos (puedes editar y meter tus productos reales) =======
-const PRODUCTS = [
-  {
-    id: "m1",
-    name: "Manilla Ónix Minimal",
-    category: "manillas",
-    price: 39000,
-    material: "Cuero + acero",
-    color: "Negro",
-    featured: true,
-    image: "./img/1.jpg",
-    desc: "Diseño sobrio, ajuste cómodo y herrajes premium."
-  },
-  {
-    id: "m2",
-    name: "Manilla Aurora Trenzada",
-    category: "manillas",
-    price: 45000,
-    material: "Cuero trenzado",
-    color: "Caramelo",
-    featured: false,
-    image: "./img/2.jpeg",
-    desc: "Textura elegante con acabado artesanal."
-  },
-  {
-    id: "p1",
-    name: "Pulsera Perla Urbana",
-    category: "pulseras",
-    price: 52000,
-    material: "Perla sintética + acero",
-    color: "Marfil",
-    featured: true,
-    image: "./img/3.jpeg",
-    desc: "Un toque clásico para looks modernos."
-  },
-  {
-    id: "p2",
-    name: "Pulsera Cadena Nébula",
-    category: "pulseras",
-    price: 61000,
-    material: "Acero inoxidable",
-    color: "Plata",
-    featured: false,
-    image: "./img/4.jpeg",
-    desc: "Brillo discreto con eslabones finos."
-  },
-  {
-    id: "a1",
-    name: "Anillo Halo",
-    category: "anillos",
-    price: 56000,
-    material: "Acero inoxidable",
-    color: "Plata",
-    featured: true,
-    image: "./img/5.jpeg",
-    desc: "Perfil delgado, perfecto para combinar."
-  },
-  {
-    id: "a2",
-    name: "Anillo Sello Eclipse",
-    category: "anillos",
-    price: 72000,
-    material: "Acero + acabado mate",
-    color: "Grafito",
-    featured: false,
-    image: "./img/6.jpeg",
-    desc: "Presencia fuerte, estética minimal."
-  },
-  {
-    id: "c1",
-    name: "Collar Línea Boreal",
-    category: "collares",
-    price: 68000,
-    material: "Acero inoxidable",
-    color: "Plata",
-    featured: true,
-    image: "./img/7.jpeg",
-    desc: "Cadena fina con caída elegante."
-  },
-  {
-    id: "c2",
-    name: "Collar Dije Luna",
-    category: "collares",
-    price: 74000,
-    material: "Acero + baño",
-    color: "Dorado suave",
-    featured: false,
-    image: "./img/8.jpeg",
-    desc: "Dije sutil, ideal para regalo."
-  }
-];
+import { supabase } from "./supabaseClient.js";
 
-// ======= Helpers =======
-const $ = (sel) => document.querySelector(sel);
-const money = (n) => n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
-const STORAGE_KEY = "lumina_cart_v1";
+/** UI helpers */
+const $ = (id) => document.getElementById(id);
 
-// ======= Estado =======
-let state = {
-  search: "",
-  category: "all",
+function toast(message, type = "success", ms = 2600) {
+  const host = $("toasts");
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.innerHTML = `
+    <p class="msg">${escapeHtml(message)}</p>
+    <button class="btn icon" aria-label="Cerrar notificación">✕</button>
+  `;
+  const btn = el.querySelector("button");
+  btn.addEventListener("click", () => el.remove());
+  host.appendChild(el);
+  setTimeout(() => el.remove(), ms);
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (m) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+}
+
+function clampInt(v, def = 0) {
+  const n = parseInt(String(v).replace(/[^\d-]/g, ""), 10);
+  return Number.isFinite(n) ? n : def;
+}
+
+function calcFinalPrice(basePrice, extra, discountPercent) {
+  const pre = basePrice + extra;
+  const disc = Math.max(0, Math.min(100, discountPercent || 0));
+  const final = Math.round(pre * (1 - disc / 100));
+  return { pre, final, disc };
+}
+
+/** State */
+let allProducts = []; // with sizes embedded
+let filtered = [];
+
+const state = {
+  q: "",
+  category: "",
   sort: "featured",
-  cart: loadCart()
+  featuredOnly: "all",
+  priceCap: null,
+  modalProduct: null,
+  modalSizeId: null,
+  modalColor: null,
 };
 
-// ======= Elementos =======
-const productsGrid = $("#productsGrid");
-const searchInput = $("#searchInput");
-const clearSearchBtn = $("#clearSearchBtn");
-const categorySelect = $("#categorySelect");
-const sortSelect = $("#sortSelect");
-const resultsHint = $("#resultsHint");
+const CART_KEY = "accessories_cart_v1";
 
-const cartDrawer = $("#cartDrawer");
-const cartBackdrop = $("#cartBackdrop");
-const cartOpenBtn = $("#cartOpenBtn");
-const cartCloseBtn = $("#cartCloseBtn");
-const cartItems = $("#cartItems");
-const cartCount = $("#cartCount");
-const cartSub = $("#cartSub");
-const subtotalEl = $("#subtotal");
-const shippingEl = $("#shipping");
-const totalEl = $("#total");
-const clearCartBtn = $("#clearCartBtn");
-const checkoutBtn = $("#checkoutBtn");
-
-const modal = $("#productModal");
-const modalBackdrop = $("#modalBackdrop");
-const modalCloseBtn = $("#modalCloseBtn");  
-const modalContent = $("#modalContent");
-
-const toast = $("#toast");
-const openFeaturedBtn = $("#openFeaturedBtn");
-
-// ======= Render productos =======
-function getFilteredProducts() {
-  const q = state.search.trim().toLowerCase();
-  let items = PRODUCTS.filter(p => {
-    const matchesSearch =
-      !q ||
-      p.name.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q) ||
-      p.material.toLowerCase().includes(q) ||
-      p.color.toLowerCase().includes(q);
-
-    const matchesCategory = state.category === "all" || p.category === state.category;
-    return matchesSearch && matchesCategory;
-  });
-
-  switch (state.sort) {
-    case "priceAsc":
-      items.sort((a,b) => a.price - b.price); break;
-    case "priceDesc":
-      items.sort((a,b) => b.price - a.price); break;
-    case "nameAsc":
-      items.sort((a,b) => a.name.localeCompare(b.name, "es")); break;
-    case "featured":
-    default:
-      items.sort((a,b) => (b.featured === true) - (a.featured === true) || a.price - b.price);
-  }
-
-  return items;
-}
-
-function renderProducts() {
-  const items = getFilteredProducts();
-  resultsHint.textContent = items.length
-    ? `Mostrando ${items.length} producto(s).`
-    : `No encontramos productos con ese filtro.`;
-
-  productsGrid.innerHTML = items.map(p => `
-    <article class="card">
-      <div class="card__img">
-        ${productImageOrFallback(p)}
-        <span class="badge">${capitalize(p.category)}</span>
-      </div>
-
-      <div class="card__body">
-        <div class="card__name">
-          <span>${escapeHtml(p.name)}</span>
-          <span class="price">${money(p.price)}</span>
-        </div>
-        <div class="card__desc">${escapeHtml(p.desc)}</div>
-        <div class="card__actions">
-          <button class="iconBtn" data-action="view" data-id="${p.id}">Ver</button>
-          <button class="btn btn--small" data-action="add" data-id="${p.id}">Agregar</button>
-        </div>
-      </div>
-    </article>
-  `).join("");
-
-  productsGrid.querySelectorAll("button[data-action]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const id = btn.getAttribute("data-id");
-      const action = btn.getAttribute("data-action");
-      if (action === "add") addToCart(id, 1);
-      if (action === "view") openProductModal(id);
-    });
-  });
-}
-
-// ======= Carrito =======
 function loadCart() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const obj = JSON.parse(raw);
-    return obj && typeof obj === "object" ? obj : {};
-  } catch {
-    return {};
+  try { return JSON.parse(localStorage.getItem(CART_KEY) || "[]"); }
+  catch { return []; }
+}
+function saveCart(cart) {
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+}
+function cartKey(item) {
+  return `${item.product_id}__${item.size_id}__${item.color}`;
+}
+function cartCount(cart) {
+  return cart.reduce((sum, it) => sum + it.qty, 0);
+}
+
+/** Shipping rule (simple) */
+function calcShipping(subtotal) {
+  if (subtotal <= 0) return 0;
+  // Simulado: envío fijo, gratis si supera 150k
+  return subtotal >= 150000 ? 0 : 12000;
+}
+
+/** Data loading */
+async function fetchCatalog() {
+  $("loadingBar").classList.remove("hidden");
+  $("emptyState").classList.add("hidden");
+  $("productsGrid").innerHTML = "";
+  $("resultCount").textContent = "Cargando…";
+
+  // Products: public read
+  const { data: products, error: pErr } = await supabase
+    .from("products")
+    .select("id,name,category,desc,base_price,discount_percent,featured,colors,image_url,created_at,updated_at")
+    .order("created_at", { ascending: false });
+
+  if (pErr) {
+    $("loadingBar").classList.add("hidden");
+    toast(`Error cargando productos: ${pErr.message}`, "error", 4000);
+    $("resultCount").textContent = "Error";
+    return;
   }
+
+  // Sizes: public read
+  const { data: sizes, error: sErr } = await supabase
+    .from("product_sizes")
+    .select("id,product_id,label,extra_price")
+    .order("label", { ascending: true });
+
+  if (sErr) {
+    $("loadingBar").classList.add("hidden");
+    toast(`Error cargando tallas: ${sErr.message}`, "error", 4000);
+    $("resultCount").textContent = "Error";
+    return;
+  }
+
+  const byProduct = new Map();
+  for (const s of sizes || []) {
+    if (!byProduct.has(s.product_id)) byProduct.set(s.product_id, []);
+    byProduct.get(s.product_id).push(s);
+  }
+
+  allProducts = (products || []).map(p => ({
+    ...p,
+    sizes: (byProduct.get(p.id) || []).sort((a,b) => a.extra_price - b.extra_price)
+  }));
+
+  $("loadingBar").classList.add("hidden");
+  applyFiltersRender();
 }
 
-function saveCart() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.cart));
+/** Filtering/sorting */
+function applyFiltersRender() {
+  const q = state.q.trim().toLowerCase();
+  let items = [...allProducts];
+
+  if (q) {
+    items = items.filter(p =>
+      (p.name || "").toLowerCase().includes(q) ||
+      (p.category || "").toLowerCase().includes(q) ||
+      (p.desc || "").toLowerCase().includes(q)
+    );
+  }
+
+  if (state.category) {
+    items = items.filter(p => (p.category || "").toLowerCase() === state.category);
+  }
+
+  if (state.featuredOnly === "yes") {
+    items = items.filter(p => !!p.featured);
+  }
+
+  if (Number.isFinite(state.priceCap) && state.priceCap > 0) {
+    items = items.filter(p => {
+      const minExtra = (p.sizes?.length ? Math.min(...p.sizes.map(s => s.extra_price || 0)) : 0);
+      const { final } = calcFinalPrice(p.base_price || 0, minExtra, p.discount_percent || 0);
+      return final <= state.priceCap;
+    });
+  }
+
+  // Sorting
+  const sort = state.sort;
+  items.sort((a,b) => {
+    if (sort === "featured") {
+      if (!!a.featured !== !!b.featured) return a.featured ? -1 : 1;
+      // then newest
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+
+    const minA = (a.sizes?.length ? Math.min(...a.sizes.map(s => s.extra_price || 0)) : 0);
+    const minB = (b.sizes?.length ? Math.min(...b.sizes.map(s => s.extra_price || 0)) : 0);
+    const priceA = calcFinalPrice(a.base_price || 0, minA, a.discount_percent || 0).final;
+    const priceB = calcFinalPrice(b.base_price || 0, minB, b.discount_percent || 0).final;
+
+    if (sort === "price_asc") return priceA - priceB;
+    if (sort === "price_desc") return priceB - priceA;
+
+    const nameA = (a.name || "").toLowerCase();
+    const nameB = (b.name || "").toLowerCase();
+    if (sort === "name_asc") return nameA.localeCompare(nameB, "es");
+    if (sort === "name_desc") return nameB.localeCompare(nameA, "es");
+    return 0;
+  });
+
+  filtered = items;
+  renderGrid();
 }
 
-function cartItemsArray() {
-  return Object.entries(state.cart)
-    .map(([id, qty]) => ({ product: PRODUCTS.find(p => p.id === id), qty }))
-    .filter(x => x.product && x.qty > 0);
-}
+function renderGrid() {
+  const grid = $("productsGrid");
+  grid.innerHTML = "";
 
-function cartCountTotal() {
-  return cartItemsArray().reduce((sum, x) => sum + x.qty, 0);
-}
+  $("resultCount").textContent = `${filtered.length} producto(s)`;
 
-function cartSubtotal() {
-  return cartItemsArray().reduce((sum, x) => sum + x.qty * x.product.price, 0);
-}
+  if (!filtered.length) {
+    $("emptyState").classList.remove("hidden");
+    return;
+  }
+  $("emptyState").classList.add("hidden");
 
-function shippingCost(subtotal) {
-  // Simple: envío gratis desde 120k, si no 9k
-  if (subtotal === 0) return 0;
-  return subtotal >= 120000 ? 0 : 9000;
-}
+  for (const p of filtered) {
+    const minExtra = (p.sizes?.length ? Math.min(...p.sizes.map(s => s.extra_price || 0)) : 0);
+    const { pre, final, disc } = calcFinalPrice(p.base_price || 0, minExtra, p.discount_percent || 0);
 
-function addToCart(id, qty) {
-  state.cart[id] = (state.cart[id] || 0) + qty;
-  saveCart();
-  renderCart();
-  showToast("Agregado al carrito ✅");
-}
+    const card = document.createElement("article");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="cardMedia">
+        <img src="${escapeHtml(p.image_url || fallbackImg())}" alt="${escapeHtml(p.name || "Producto")}" loading="lazy" />
+      </div>
+      <div class="cardBody">
+        <div class="cardBadges">
+          <span class="badge category">${escapeHtml((p.category || "accesorios").toLowerCase())}</span>
+          ${p.featured ? `<span class="badge featured">Destacado</span>` : ""}
+          ${disc > 0 ? `<span class="badge discount">-${disc}%</span>` : ""}
+        </div>
 
-function setQty(id, qty) {
-  if (qty <= 0) delete state.cart[id];
-  else state.cart[id] = qty;
-  saveCart();
-  renderCart();
-}
+        <h3 class="cardTitle">${escapeHtml(p.name || "Producto")}</h3>
 
-function clearCart() {
-  state.cart = {};
-  saveCart();
-  renderCart();
-  showToast("Carrito vacío.");
-}
+        <div class="priceRow" aria-label="Precio">
+          <div>
+            <div class="muted tiny">Desde</div>
+            <div class="row" style="gap:10px; align-items:baseline;">
+              <div class="priceMain">${fmtCOP.format(final)}</div>
+              ${disc > 0 ? `<div class="priceOld">${fmtCOP.format(pre)}</div>` : ""}
+            </div>
+          </div>
+          <span class="badge">COP</span>
+        </div>
 
-function renderCart() {
-  const items = cartItemsArray();
-  const count = cartCountTotal();
-  cartCount.textContent = String(count);
-  cartSub.textContent = `${count} artículo(s)`;
-
-  if (!items.length) {
-    cartItems.innerHTML = `
-      <div class="muted" style="padding:10px 2px;">
-        Tu carrito está vacío. Agrega algo del catálogo ✨
+        <div class="cardActions">
+          <button class="btn primary block" aria-label="Ver detalles">Ver</button>
+        </div>
       </div>
     `;
-  } else {
-    cartItems.innerHTML = items.map(({ product, qty }) => `
-      <div class="cartItem">
-        <div class="cartItem__thumb" aria-hidden="true"></div>
-        <div class="cartItem__meta">
-          <div class="cartItem__top">
-            <div>
-              <div style="font-weight:750;">${escapeHtml(product.name)}</div>
-              <div class="muted tiny">${capitalize(product.category)} • ${escapeHtml(product.material)} • ${escapeHtml(product.color)}</div>
-            </div>
-            <button class="iconBtn" data-remove="${product.id}" aria-label="Quitar">🗑️</button>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-            <div class="qty">
-              <button data-dec="${product.id}" aria-label="Disminuir">−</button>
-              <span>${qty}</span>
-              <button data-inc="${product.id}" aria-label="Aumentar">+</button>
-            </div>
-            <div class="price">${money(product.price * qty)}</div>
-          </div>
-        </div>
-      </div>
-    `).join("");
 
-    cartItems.querySelectorAll("button[data-remove]").forEach(b => {
-      b.addEventListener("click", () => setQty(b.dataset.remove, 0));
-    });
-    cartItems.querySelectorAll("button[data-dec]").forEach(b => {
-      b.addEventListener("click", () => {
-        const id = b.dataset.dec;
-        setQty(id, (state.cart[id] || 1) - 1);
-      });
-    });
-    cartItems.querySelectorAll("button[data-inc]").forEach(b => {
-      b.addEventListener("click", () => {
-        const id = b.dataset.inc;
-        setQty(id, (state.cart[id] || 0) + 1);
-      });
-    });
+    card.querySelector("button").addEventListener("click", () => openModal(p.id));
+    grid.appendChild(card);
   }
-
-  const sub = cartSubtotal();
-  const ship = shippingCost(sub);
-  subtotalEl.textContent = money(sub);
-  shippingEl.textContent = ship === 0 ? "Gratis" : money(ship);
-  totalEl.textContent = money(sub + ship);
-
-  checkoutBtn.disabled = (sub === 0);
-  clearCartBtn.disabled = (sub === 0);
-  checkoutBtn.style.opacity = checkoutBtn.disabled ? ".6" : "1";
-  clearCartBtn.style.opacity = clearCartBtn.disabled ? ".6" : "1";
 }
 
-// ======= Drawer (carrito) =======
-function openCart() {
-  cartDrawer.classList.add("open");
-  cartDrawer.setAttribute("aria-hidden", "false");
-}
-function closeCart() {
-  cartDrawer.classList.remove("open");
-  cartDrawer.setAttribute("aria-hidden", "true");
+function fallbackImg() {
+  // Placeholder ultra-ligero (data URI SVG)
+  const svg = encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="900" height="675">
+      <defs>
+        <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+          <stop stop-color="#7c5cff" stop-opacity=".35" offset="0"/>
+          <stop stop-color="#22c55e" stop-opacity=".18" offset="1"/>
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="#0b0c10"/>
+      <rect x="40" y="40" width="820" height="595" rx="36" fill="url(#g)" stroke="rgba(255,255,255,.08)"/>
+      <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle"
+        fill="rgba(238,241,255,.75)" font-family="system-ui,Segoe UI,Roboto" font-size="28" font-weight="800">
+        ACCESORIOS
+      </text>
+      <text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle"
+        fill="rgba(238,241,255,.45)" font-family="system-ui,Segoe UI,Roboto" font-size="16">
+        imagen pendiente
+      </text>
+    </svg>
+  `);
+  return `data:image/svg+xml;charset=utf-8,${svg}`;
 }
 
-// ======= Modal producto =======
-function openProductModal(id) {
-  const p = PRODUCTS.find(x => x.id === id);
+/** Modal */
+function openModal(productId) {
+  const p = allProducts.find(x => x.id === productId);
   if (!p) return;
 
-  modalContent.innerHTML = `
-    <div class="modalMedia" aria-hidden="true">
-      ${productImageOrFallback(p, true)}
-    </div>
-    <div class="modalInfo">
-      <h3>${escapeHtml(p.name)}</h3>
-      <div class="kv">
-        <span>${capitalize(p.category)}</span>
-        <span>${escapeHtml(p.material)}</span>
-        <span>${escapeHtml(p.color)}</span>
-        ${p.featured ? "<span>★ Destacado</span>" : ""}
-      </div>
-      <p class="muted">${escapeHtml(p.desc)} Ideal para combinar con looks casuales o formales.</p>
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:6px;">
-        <div class="price" style="font-size:1.2rem;">${money(p.price)}</div>
-        <button class="btn" id="modalAddBtn">Agregar al carrito</button>
-      </div>
-      <div class="tiny muted">Tip: cambia imágenes reales y conecta a una pasarela (Stripe/MercadoPago) cuando quieras.</div>
-    </div>
-  `;
+  state.modalProduct = p;
 
-  $("#modalAddBtn").addEventListener("click", () => {
-    addToCart(p.id, 1);
-    closeModal();
-    openCart();
-  });
+  $("modalTitle").textContent = p.name || "Producto";
+  $("modalDesc").textContent = p.desc || "Sin descripción.";
+  $("modalImg").src = p.image_url || fallbackImg();
+  $("modalImg").alt = p.name || "Producto";
 
-  modal.classList.add("open");
-  modal.setAttribute("aria-hidden", "false");
+  // badges
+  const badges = [];
+  badges.push(`<span class="badge category">${escapeHtml(p.category || "accesorios")}</span>`);
+  if (p.featured) badges.push(`<span class="badge featured">Destacado</span>`);
+  if ((p.discount_percent || 0) > 0) badges.push(`<span class="badge discount">-${p.discount_percent}%</span>`);
+  $("modalBadges").innerHTML = badges.join("");
+
+  // size select
+  const sizeSelect = $("sizeSelect");
+  sizeSelect.innerHTML = "";
+  const sizes = (p.sizes?.length ? p.sizes : [{ id: "no-size", product_id: p.id, label: "Única", extra_price: 0 }]);
+  for (const s of sizes) {
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = `${s.label}${s.extra_price ? ` (+${fmtCOP.format(s.extra_price)})` : ""}`;
+    sizeSelect.appendChild(opt);
+  }
+  state.modalSizeId = sizes[0].id;
+
+  // color select
+  const colorSelect = $("colorSelect");
+  colorSelect.innerHTML = "";
+  const colors = (Array.isArray(p.colors) && p.colors.length) ? p.colors : ["Negro"];
+  for (const c of colors) {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    colorSelect.appendChild(opt);
+  }
+  state.modalColor = colors[0];
+
+  sizeSelect.onchange = () => {
+    state.modalSizeId = sizeSelect.value;
+    updateModalPrice();
+  };
+  colorSelect.onchange = () => {
+    state.modalColor = colorSelect.value;
+  };
+
+  updateModalPrice();
+
+  $("modalBackdrop").classList.add("open");
+  $("productModal").classList.add("open");
+  $("modalBackdrop").setAttribute("aria-hidden", "false");
+
+  // focus
+  setTimeout(() => $("addToCartBtn").focus(), 0);
 }
 
 function closeModal() {
-  modal.classList.remove("open");
-  modal.setAttribute("aria-hidden", "true");
+  $("modalBackdrop").classList.remove("open");
+  $("productModal").classList.remove("open");
+  $("modalBackdrop").setAttribute("aria-hidden", "true");
+  state.modalProduct = null;
+  state.modalSizeId = null;
+  state.modalColor = null;
 }
 
-// ======= Toast =======
-let toastTimer = null;
-function showToast(msg) {
-  toast.textContent = msg;
-  toast.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove("show"), 1400);
-}
+function updateModalPrice() {
+  const p = state.modalProduct;
+  if (!p) return;
+  const size = (p.sizes?.length ? p.sizes.find(s => s.id === state.modalSizeId) : null) || { extra_price: 0, label: "Única", id: "no-size" };
+  const { pre, final, disc } = calcFinalPrice(p.base_price || 0, size.extra_price || 0, p.discount_percent || 0);
 
-// ======= Eventos UI =======
-searchInput.addEventListener("input", () => {
-  state.search = searchInput.value;
-  renderProducts();
-});
-clearSearchBtn.addEventListener("click", () => {
-  searchInput.value = "";
-  state.search = "";
-  renderProducts();
-  searchInput.focus();
-});
+  $("modalPrice").textContent = fmtCOP.format(final);
 
-categorySelect.addEventListener("change", () => {
-  state.category = categorySelect.value;
-  renderProducts();
-});
-sortSelect.addEventListener("change", () => {
-  state.sort = sortSelect.value;
-  renderProducts();
-});
-
-cartOpenBtn.addEventListener("click", () => { renderCart(); openCart(); });
-cartCloseBtn.addEventListener("click", closeCart);
-cartBackdrop.addEventListener("click", closeCart);
-
-modalBackdrop.addEventListener("click", closeModal);
-modalCloseBtn.addEventListener("click", closeModal);
-
-clearCartBtn.addEventListener("click", clearCart);
-
-checkoutBtn.addEventListener("click", () => {
-  const sub = cartSubtotal();
-  const ship = shippingCost(sub);
-  const total = sub + ship;
-
-  // Checkout simulado
-  showToast("Checkout listo ✅ (simulado)");
-  alert(
-    `Pedido simulado:\n\nSubtotal: ${money(sub)}\nEnvío: ${ship === 0 ? "Gratis" : money(ship)}\nTotal: ${money(total)}\n\nSiguiente paso: conectar pasarela de pago.`
-  );
-});
-
-openFeaturedBtn.addEventListener("click", () => {
-  state.sort = "featured";
-  sortSelect.value = "featured";
-  state.category = "all";
-  categorySelect.value = "all";
-  renderProducts();
-  document.querySelector("#shop").scrollIntoView({ behavior: "smooth" });
-});
-
-// Accesibilidad: ESC cierra modal/drawer
-window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    closeModal();
-    closeCart();
+  if (disc > 0) {
+    $("modalOldPrice").classList.remove("hidden");
+    $("modalOldPrice").textContent = fmtCOP.format(pre);
+    $("modalDiscountHint").classList.remove("hidden");
+    $("modalDiscountHint").textContent = `-${disc}%`;
+  } else {
+    $("modalOldPrice").classList.add("hidden");
+    $("modalDiscountHint").classList.add("hidden");
   }
-});
 
-// ======= Inicio =======
-renderProducts();
-renderCart();
-
-// ======= Utils =======
-function capitalize(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : ""; }
-function escapeHtml(str){
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  $("modalFormula").textContent = `(${fmtCOP.format(p.base_price || 0)} + ${fmtCOP.format(size.extra_price || 0)}) → descuento ${disc}%`;
 }
 
-function productImageOrFallback(p, isModal = false){
-  const label = (p?.name || "Producto").split(" ").slice(0,2).join(" ");
-  const cls = isModal ? 'style="width:100%;height:100%;object-fit:cover;display:block;"' : "";
-  
-  if (p?.image) {
-    // usamos onerror para que si la ruta está mal, caiga al fallback
-    return `
-      <img src="${escapeAttr(p.image)}" alt="${escapeAttr(p.name)}"
-           ${cls}
-           onerror="this.outerHTML='<div class=\\'imgFallback\\'>${escapeHtml(label)}</div>'">
+/** Cart UI */
+function openCart() {
+  $("drawerBackdrop").classList.add("open");
+  $("cartDrawer").classList.add("open");
+  $("cartDrawer").setAttribute("aria-hidden", "false");
+  $("drawerBackdrop").setAttribute("aria-hidden", "false");
+}
+function closeCart() {
+  $("drawerBackdrop").classList.remove("open");
+  $("cartDrawer").classList.remove("open");
+  $("cartDrawer").setAttribute("aria-hidden", "true");
+  $("drawerBackdrop").setAttribute("aria-hidden", "true");
+}
+
+function renderCart() {
+  const cart = loadCart();
+  $("cartCount").textContent = String(cartCount(cart));
+
+  const host = $("cartItems");
+  host.innerHTML = "";
+
+  if (!cart.length) {
+    const empty = document.createElement("div");
+    empty.className = "panel";
+    empty.innerHTML = `
+      <h2 style="margin:0 0 6px;">Carrito vacío</h2>
+      <p class="muted" style="margin:0;">Agrega un producto para empezar.</p>
     `;
+    host.appendChild(empty);
+
+    $("cartSubtotal").textContent = fmtCOP.format(0);
+    $("cartShipping").textContent = fmtCOP.format(0);
+    $("cartTotal").textContent = fmtCOP.format(0);
+    return;
   }
 
-  return `<div class="imgFallback">${escapeHtml(label)}</div>`;
+  let subtotal = 0;
+
+  for (const it of cart) {
+    const p = allProducts.find(x => x.id === it.product_id);
+    const size = p?.sizes?.find(s => s.id === it.size_id) || { extra_price: 0, label: "Única" };
+
+    const { final } = calcFinalPrice(p?.base_price || 0, size.extra_price || 0, p?.discount_percent || 0);
+    const line = final * it.qty;
+    subtotal += line;
+
+    const el = document.createElement("div");
+    el.className = "cartItem";
+    el.innerHTML = `
+      <div class="cartItemTop">
+        <div class="cartThumb">
+          <img src="${escapeHtml(p?.image_url || fallbackImg())}" alt="${escapeHtml(p?.name || "Producto")}" />
+        </div>
+        <div class="cartMeta">
+          <p class="name">${escapeHtml(p?.name || "Producto")}</p>
+          <p class="variant">Talla: ${escapeHtml(size.label)} · Color: ${escapeHtml(it.color)}</p>
+          <p class="muted tiny" style="margin:6px 0 0;">
+            ${fmtCOP.format(final)} c/u
+          </p>
+        </div>
+      </div>
+
+      <div class="qtyRow">
+        <div class="qtyControls" aria-label="Cantidad">
+          <button class="btn" aria-label="Disminuir">-</button>
+          <div class="qtyNumber" aria-label="Cantidad actual">${it.qty}</div>
+          <button class="btn" aria-label="Aumentar">+</button>
+        </div>
+        <div class="row" style="gap:10px;">
+          <strong>${fmtCOP.format(line)}</strong>
+          <button class="btn danger" aria-label="Eliminar">Eliminar</button>
+        </div>
+      </div>
+    `;
+
+    const [minusBtn, plusBtn] = el.querySelectorAll(".qtyControls .btn");
+    const delBtn = el.querySelector(".btn.danger");
+
+    minusBtn.addEventListener("click", () => updateCartQty(it, -1));
+    plusBtn.addEventListener("click", () => updateCartQty(it, +1));
+    delBtn.addEventListener("click", () => removeFromCart(it));
+
+    host.appendChild(el);
+  }
+
+  const shipping = calcShipping(subtotal);
+  const total = subtotal + shipping;
+
+  $("cartSubtotal").textContent = fmtCOP.format(subtotal);
+  $("cartShipping").textContent = fmtCOP.format(shipping);
+  $("cartTotal").textContent = fmtCOP.format(total);
 }
 
-function escapeAttr(str){
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
+function addToCart(product, sizeId, color) {
+  const sizes = (product.sizes?.length ? product.sizes : [{ id: "no-size", extra_price: 0, label: "Única" }]);
+  const size = sizes.find(s => s.id === sizeId) || sizes[0];
+
+  const cart = loadCart();
+  const item = {
+    product_id: product.id,
+    size_id: size.id,
+    color: color || "Negro",
+    qty: 1
+  };
+
+  const k = cartKey(item);
+  const existing = cart.find(x => cartKey(x) === k);
+  if (existing) existing.qty += 1;
+  else cart.push(item);
+
+  saveCart(cart);
+  renderCart();
+  toast("Agregado al carrito ✅", "success");
 }
 
+function updateCartQty(item, delta) {
+  const cart = loadCart();
+  const k = cartKey(item);
+  const found = cart.find(x => cartKey(x) === k);
+  if (!found) return;
 
-// Filtros colapsables en móvil
-const filtersToggleBtn = document.querySelector("#filtersToggleBtn");
-const filtersPanel = document.querySelector("#filtersPanel");
+  found.qty = Math.max(1, found.qty + delta);
+  saveCart(cart);
+  renderCart();
+}
 
-if (filtersToggleBtn && filtersPanel) {
-  filtersToggleBtn.addEventListener("click", () => {
-    filtersPanel.classList.toggle("open");
-    filtersToggleBtn.textContent = filtersPanel.classList.contains("open")
-      ? "Filtros ▴"
-      : "Filtros ▾";
+function removeFromCart(item) {
+  let cart = loadCart();
+  const k = cartKey(item);
+  cart = cart.filter(x => cartKey(x) !== k);
+  saveCart(cart);
+  renderCart();
+  toast("Item eliminado", "warn");
+}
+
+/** Events */
+function wireEvents() {
+  // Filters toggle mobile
+  const toggleBtn = $("filtersToggleBtn");
+  const body = $("filtersBody");
+  let open = true;
+  function setOpen(v) {
+    open = v;
+    toggleBtn.setAttribute("aria-expanded", String(open));
+    body.classList.toggle("hidden", !open);
+  }
+  // mobile-first: abierto, pero el botón permite colapsar
+  setOpen(true);
+
+  toggleBtn.addEventListener("click", () => setOpen(!open));
+
+  $("searchInput").addEventListener("input", (e) => {
+    state.q = e.target.value || "";
+    applyFiltersRender();
+  });
+
+  $("categorySelect").addEventListener("change", (e) => {
+    state.category = (e.target.value || "").toLowerCase();
+    applyFiltersRender();
+  });
+
+  $("sortSelect").addEventListener("change", (e) => {
+    state.sort = e.target.value;
+    applyFiltersRender();
+  });
+
+  $("featuredOnly").addEventListener("change", (e) => {
+    state.featuredOnly = e.target.value;
+    applyFiltersRender();
+  });
+
+  $("priceCap").addEventListener("input", (e) => {
+    const val = clampInt(e.target.value, NaN);
+    state.priceCap = Number.isFinite(val) ? val : null;
+    applyFiltersRender();
+  });
+
+  $("clearFiltersBtn").addEventListener("click", () => {
+    state.q = "";
+    state.category = "";
+    state.sort = "featured";
+    state.featuredOnly = "all";
+    state.priceCap = null;
+
+    $("searchInput").value = "";
+    $("categorySelect").value = "";
+    $("sortSelect").value = "featured";
+    $("featuredOnly").value = "all";
+    $("priceCap").value = "";
+
+    applyFiltersRender();
+    toast("Filtros limpiados", "success");
+  });
+
+  // Cart
+  $("cartOpenBtn").addEventListener("click", () => {
+    openCart();
+    renderCart();
+  });
+  $("cartCloseBtn").addEventListener("click", closeCart);
+  $("drawerBackdrop").addEventListener("click", closeCart);
+
+  $("clearCartBtn").addEventListener("click", () => {
+    saveCart([]);
+    renderCart();
+    toast("Carrito vacío", "warn");
+  });
+
+  $("checkoutBtn").addEventListener("click", () => {
+    const cart = loadCart();
+    if (!cart.length) return toast("Tu carrito está vacío.", "warn");
+    toast("Compra simulada ✅ (aquí iría el pago)", "success", 3200);
+  });
+
+  // Modal
+  $("modalCloseBtn").addEventListener("click", closeModal);
+  $("modalBackdrop").addEventListener("click", closeModal);
+
+  $("addToCartBtn").addEventListener("click", () => {
+    const p = state.modalProduct;
+    if (!p) return;
+    addToCart(p, state.modalSizeId, state.modalColor);
+  });
+
+  $("buyNowBtn").addEventListener("click", () => {
+    const p = state.modalProduct;
+    if (!p) return;
+    addToCart(p, state.modalSizeId, state.modalColor);
+    closeModal();
+    openCart();
+    renderCart();
+  });
+
+  // ESC
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if ($("productModal").classList.contains("open")) closeModal();
+      if ($("cartDrawer").classList.contains("open")) closeCart();
+    }
   });
 }
+
+(async function init() {
+  wireEvents();
+  renderCart();
+  await fetchCatalog();
+})();
