@@ -2,12 +2,23 @@
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tienda de Accesorios | Minimal</title>
-  <meta name="description" content="Tienda online de accesorios: manillas, pulseras, anillos, collares." />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Tienda de Accesorios | Premium</title>
+  <meta name="description" content="Tienda online de accesorios: manillas, pulseras, anillos, collares. Selecciona talla y color, precios en COP con descuento automático." />
+  <meta name="theme-color" content="#0b0d18" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
+
 <body>
+  <a class="skipLink" href="#main">Saltar al contenido</a>
+
+  <!-- Photo background (slideshow) -->
+  <div class="photoBg" aria-hidden="true">
+    <div class="photoLayer isOn" id="bgA"></div>
+    <div class="photoLayer" id="bgB"></div>
+    <div class="photoOverlay"></div>
+  </div>
+
   <!-- Topbar: logo + carrito arriba, buscador abajo (mobile-first) -->
   <header class="topbar" role="banner">
     <div class="inner">
@@ -15,12 +26,11 @@
         <a id="brandLogo" class="logo" href="./index.html" aria-label="Ir a inicio (mantén presionado para Admin)">
           <span class="dot" aria-hidden="true"></span>
           <span>ACCESORIOS</span>
-          <span class="muted tiny">/ minimal</span>
+          <span class="muted tiny">/ premium</span>
 
-         <!-- Hotspot invisible: no se ve, pero sirve para tocar/click -->
-        <span class="adminHotspot" aria-hidden="true"></span>
+          <!-- Hotspot invisible: no se ve, pero sirve para tocar/click (acceso oculto) -->
+          <span class="adminHotspot" aria-hidden="true"></span>
         </a>
-
 
         <button id="cartOpenBtn" class="btn icon cartBtn" aria-label="Abrir carrito">
           <span aria-hidden="true">🛒</span>
@@ -36,17 +46,23 @@
     </div>
   </header>
 
-  <main class="container" role="main">
-    <!-- Hero compacto -->
+  <main id="main" class="container" role="main">
+    <!-- Hero compacto (premium) -->
     <section class="hero" aria-label="Presentación">
       <div class="heroCard">
         <h1 class="heroTitle">Accesorios elegantes, sin ruido.</h1>
         <p class="heroText">Elige tu estilo. Selecciona talla y color. Precios en COP con descuento automático.</p>
-         <div class="chips" aria-label="Beneficios">
-           <span class="chip">Envío rápido</span>
-           <span class="chip">Descuentos automáticos</span>
-           <span class="chip">Variantes: talla y color</span>
-         </div>
+
+        <div class="chips" aria-label="Beneficios">
+          <span class="chip">Envío rápido</span>
+          <span class="chip">Descuentos automáticos</span>
+          <span class="chip">Variantes: talla y color</span>
+          <span class="chip">Pago (próximamente)</span>
+        </div>
+
+        <div class="row wrap" style="margin-top:12px; gap:10px;">
+          
+        </div>
       </div>
     </section>
 
@@ -54,11 +70,12 @@
     <section id="filtersBox" class="filters" aria-label="Filtros de productos">
       <div class="filtersHeader">
         <div class="row wrap">
-          <span class="badge" aria-label="Estado">Catálogo</span>
+          <span class="badge category" aria-label="Estado">Catálogo</span>
           <span id="resultCount" class="muted small">Cargando…</span>
         </div>
         <button id="clearFiltersBtn" class="btn ghost" aria-label="Limpiar filtros">Limpiar</button>
       </div>
+
       <div id="filtersBody" class="filtersBody">
         <div class="grid2">
           <div>
@@ -121,11 +138,10 @@
 
     <footer class="storeFooter" aria-label="Pie de página">
       <div class="storeFooterInner">
-      <span class="muted tiny">© <span id="yearNow"></span> Accesorios</span>
-      <a class="adminLink" href="./admin.html" aria-label="Entrar al panel admin">Admin</a>
+        <span class="muted tiny">© <span id="yearNow"></span> Accesorios</span>
+        <span class="muted tiny">Hecho para móvil · COP</span>
       </div>
     </footer>
- 
   </main>
 
   <!-- Drawer carrito -->
@@ -204,26 +220,45 @@
               </div>
               <div id="modalFormula" class="muted tiny" style="margin-top:4px;"></div>
             </div>
-            <span id="modalDiscountHint" class="badge discount hidden">—</span>
-          </div>
+                      </div>
 
-          <div class="modalActions">
-            <button id="addToCartBtn" class="btn primary block" aria-label="Agregar al carrito">Agregar al carrito</button>
-            <button id="buyNowBtn" class="btn block" aria-label="Comprar ahora">Comprar ahora</button>
-          </div>
+          <span id="modalDiscountHint" class="badge discount hidden">—</span>
+        </div>
+
+        <div class="modalActions">
+          <button id="addToCartBtn" class="btn primary block" aria-label="Agregar al carrito">Agregar al carrito</button>
+          <button id="buyNowBtn" class="btn block" aria-label="Comprar ahora">Comprar ahora</button>
         </div>
       </div>
     </div>
   </section>
 
   <div id="toasts" class="toasts" aria-live="polite" aria-atomic="true"></div>
+
   <!-- Bottom bar mobile: acceso rápido -->
-<div class="mobileBar" aria-label="Acciones rápidas (móvil)">
-  <button id="mobileCartBtn" class="btn primary" aria-label="Abrir carrito (móvil)">🛒 Carrito</button>
-  <button id="mobileFiltersBtn" class="btn ghost" aria-label="Mostrar u ocultar filtros">Filtros</button>
-</div>
+  <div class="mobileBar" aria-label="Acciones rápidas (móvil)">
+    <button id="mobileCartBtn" class="btn primary" aria-label="Abrir carrito (móvil)">🛒 Carrito</button>
+    <button id="mobileFiltersBtn" class="btn ghost" aria-label="Mostrar u ocultar filtros">Filtros</button>
+  </div>
 
-
+  <!-- ✅ IMPORTANTÍSIMO: aquí se conecta el JS -->
   <script type="module" src="./app.js"></script>
+
+  <!-- Small helper styles (solo para este HTML) -->
+  <style>
+    .skipLink{
+      position:absolute; left:-999px; top:10px;
+      background:rgba(14,16,26,.92);
+      border:1px solid rgba(255,255,255,.16);
+      color:#eef1ff;
+      padding:10px 12px;
+      border-radius:14px;
+      z-index:9999;
+      backdrop-filter: blur(12px);
+    }
+    .skipLink:focus{ left:12px; }
+  </style>
+
 </body>
 </html>
+
