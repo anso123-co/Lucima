@@ -494,7 +494,9 @@ function wireEvents() {
     body.classList.toggle("hidden", !open);
   }
   // mobile-first: abierto, pero el botón permite colapsar
-  setOpen(true);
+   // mobile-first: cerrado en pantallas pequeñas, abierto en tablet/pc
+  setOpen(window.innerWidth >= 700);
+
 
   toggleBtn.addEventListener("click", () => setOpen(!open));
 
@@ -587,6 +589,66 @@ function wireEvents() {
       if ($("cartDrawer").classList.contains("open")) closeCart();
     }
   });
+
+    // Year in footer
+  const y = document.getElementById("yearNow");
+  if (y) y.textContent = String(new Date().getFullYear());
+
+  // Mobile bar buttons
+  const mobileCartBtn = document.getElementById("mobileCartBtn");
+  if (mobileCartBtn) {
+    mobileCartBtn.addEventListener("click", () => {
+      openCart();
+      renderCart();
+    });
+  }
+
+  const mobileFiltersBtn = document.getElementById("mobileFiltersBtn");
+  if (mobileFiltersBtn) {
+    mobileFiltersBtn.addEventListener("click", () => {
+      const toggleBtn = document.getElementById("filtersToggleBtn");
+      if (toggleBtn) toggleBtn.click();
+      // Scroll to filters nicely
+      document.getElementById("filtersBox")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  // Secret admin access:
+  // 1) Type "admin" anywhere -> go to admin.html
+  let keyBuffer = "";
+  window.addEventListener("keydown", (e) => {
+    const k = e.key?.toLowerCase();
+    if (!k || k.length !== 1 || !/[a-z0-9]/.test(k)) return;
+
+    keyBuffer = (keyBuffer + k).slice(-10);
+    if (keyBuffer.endsWith("admin")) {
+      toast("Abriendo Admin…", "success");
+      window.location.href = "./admin.html";
+    }
+  });
+
+  // 2) Long-press logo 1200ms -> go to admin.html
+  const brandLogo = document.getElementById("brandLogo");
+  if (brandLogo) {
+    let pressTimer = null;
+
+    const start = () => {
+      pressTimer = setTimeout(() => {
+        toast("Acceso Admin", "success");
+        window.location.href = "./admin.html";
+      }, 1200);
+    };
+    const cancel = () => {
+      if (pressTimer) clearTimeout(pressTimer);
+      pressTimer = null;
+    };
+
+    brandLogo.addEventListener("pointerdown", start);
+    brandLogo.addEventListener("pointerup", cancel);
+    brandLogo.addEventListener("pointercancel", cancel);
+    brandLogo.addEventListener("pointerleave", cancel);
+  }
+
 }
 
 (async function init() {
