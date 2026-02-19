@@ -2,6 +2,8 @@ import { supabase } from "./supabaseClient.js";
 
 const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 const $ = (id) => document.getElementById(id);
+const USE_PHOTO_BG = false;
+if (USE_PHOTO_BG) initPhotoBackgroundSlideshow(PHOTO_BG_URLS, 9000);
 
 
 
