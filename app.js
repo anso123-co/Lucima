@@ -703,8 +703,7 @@ if (searchEl) {
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    // Fondo con fotos (si existe bgA/bgB)
-    initPhotoBackgroundSlideshow(PHOTO_BG_URLS, 9000);
+  
 
     // UI
     wireEvents();
