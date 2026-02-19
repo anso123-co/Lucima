@@ -1,30 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root{
-  /* Base */
-  --bg:#0b0d18;                 /* fallback si NO carga el fondo */
+  --bg:#0b0d18;
   --text:#eef1ff;
   --muted:#a7afc7;
   --line:rgba(255,255,255,.10);
 
-  /* “Glass” */
-  --glass: rgba(17,19,26,.62);
-  --glass2: rgba(17,19,26,.78);
+  --brand:#7c5cff;
+  --brandB:#34d399;
+  --brandC:#60a5fa;
 
-  /* Brand */
-  --brand:#7c5cff;     /* violeta */
-  --brandB:#34d399;    /* menta */
-  --brandC:#60a5fa;    /* azul */
   --danger:#fb7185;
   --warn:#fbbf24;
 
-  /* Surfaces */
-  --panel: rgba(255,255,255,.045);
-  --card: rgba(255,255,255,.050);
-
-  /* Effects */
   --shadow: 0 18px 60px rgba(0,0,0,.45);
   --shadow2: 0 12px 34px rgba(0,0,0,.34);
+
   --radius:18px;
   --radius2:26px;
   --max:1100px;
@@ -33,18 +24,25 @@
 *{ box-sizing:border-box; }
 
 html,body{
-  margin:0;
-  padding:0;
+  margin:0; padding:0;
   color:var(--text);
-  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
- background: transparent !important; /* deja ver .photoBg */
+  font-family:"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  background: transparent !important; /* deja ver .photoBg */
 }
 
 a{ color:inherit; text-decoration:none; }
 img{ max-width:100%; display:block; }
-
-button, input, select, textarea { font:inherit; }
+button,input,select,textarea{ font:inherit; }
 :focus-visible{ outline:2px solid rgba(124,92,255,.95); outline-offset:2px; }
+
+.hidden{ display:none !important; }
+.row{ display:flex; gap:12px; align-items:center; }
+.wrap{ flex-wrap:wrap; }
+.spread{ justify-content:space-between; }
+.muted{ color:var(--muted); }
+.small{ font-size:.9rem; }
+.tiny{ font-size:.8rem; }
+.hr{ height:1px; background:var(--line); margin:14px 0; border:0; }
 
 .container{
   width:100%;
@@ -55,19 +53,17 @@ button, input, select, textarea { font:inherit; }
   padding-right: calc(16px + env(safe-area-inset-right));
 }
 
-.hidden{ display:none !important; }
-.row{ display:flex; gap:12px; align-items:center; }
-.wrap{ flex-wrap:wrap; }
-.spread{ justify-content:space-between; }
-.center{ justify-content:center; }
-.right{ justify-content:flex-end; }
-.muted{ color:var(--muted); }
-.small{ font-size:.9rem; }
-.tiny{ font-size:.8rem; }
+/* Accesibilidad */
+.skipLink{
+  position:absolute; left:-9999px; top:8px;
+  padding:10px 12px; border-radius:12px;
+  border:1px solid var(--line);
+  background: rgba(17,19,26,.88);
+  z-index:999;
+}
+.skipLink:focus{ left:12px; }
 
-.hr{ height:1px; background:var(--line); margin:14px 0; border:0; }
-
-/* ===== Badges ===== */
+/* ===== Pills / badges ===== */
 .badge{
   display:inline-flex; align-items:center; gap:8px;
   padding:6px 10px; border-radius:999px;
@@ -75,22 +71,29 @@ button, input, select, textarea { font:inherit; }
   background: rgba(255,255,255,.055);
   color:var(--text);
   font-size:.8rem;
-  backdrop-filter: blur(10px);
 }
 .badge.discount{
   border-color: rgba(245,158,11,.35);
   background: rgba(245,158,11,.15);
-  color: #ffd28a;
+  color:#ffd28a;
 }
 .badge.category{
   border-color: rgba(124,92,255,.35);
   background: rgba(124,92,255,.15);
-  color: #d9d1ff;
+  color:#d9d1ff;
 }
 .badge.featured{
   border-color: rgba(34,197,94,.35);
   background: rgba(34,197,94,.14);
   color:#bff2d2;
+}
+.kbd{
+  border:1px solid var(--line);
+  background: rgba(255,255,255,.03);
+  padding:4px 8px;
+  border-radius:10px;
+  font-size:.8rem;
+  color:var(--muted);
 }
 
 /* ===== Buttons ===== */
@@ -102,13 +105,11 @@ button, input, select, textarea { font:inherit; }
   border-radius:14px;
   cursor:pointer;
   transition: transform .10s ease, background .18s ease, border .18s ease, box-shadow .18s ease;
-  backdrop-filter: blur(12px);
 }
-.btn:hover{
-  background: rgba(255,255,255,.09);
-  box-shadow: 0 10px 24px rgba(0,0,0,.20);
-}
+.btn:hover{ background: rgba(255,255,255,.09); box-shadow: 0 10px 24px rgba(0,0,0,.20); }
 .btn:active{ transform: translateY(1px); }
+.btn:disabled{ opacity:.55; cursor:not-allowed; }
+
 .btn.primary{
   border-color: rgba(124,92,255,.55);
   background:
@@ -121,97 +122,51 @@ button, input, select, textarea { font:inherit; }
     radial-gradient(160px 110px at 18% 20%, rgba(255,255,255,.20), transparent 58%),
     linear-gradient(135deg, rgba(124,92,255,1), rgba(124,92,255,.70));
 }
-.btn.danger{
-  background: rgba(239,68,68,.18);
-  border-color: rgba(239,68,68,.35);
-}
-.btn.ghost{
-  background: transparent;
-  border-color: var(--line);
-}
+.btn.danger{ background: rgba(239,68,68,.18); border-color: rgba(239,68,68,.35); }
+.btn.ghost{ background: transparent; border-color: var(--line); }
 .btn.block{ width:100%; }
 .btn.icon{
   padding:10px 12px;
   border-radius:14px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
 }
-.btn:disabled{ opacity:.55; cursor:not-allowed; }
 
 /* ===== Inputs ===== */
-.input, .select, .textarea{
+.input,.select,.textarea{
   width:100%;
   padding:12px 12px;
   border-radius:14px;
   border:1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.04);
   color:var(--text);
-  backdrop-filter: blur(12px);
 }
 .input::placeholder{ color: rgba(238,241,255,.45); }
 .textarea{ min-height:110px; resize:vertical; }
+.helper{ color:rgba(238,241,255,.55); font-size:.85rem; margin-top:6px; }
 
-.kbd{
-  border:1px solid var(--line);
-  background: rgba(255,255,255,.03);
-  padding:4px 8px;
-  border-radius:10px;
-  font-size:.8rem;
-  color:var(--muted);
-}
-
-/* ================================
-   PHOTO BACKGROUND SLIDESHOW
-   (lo que querías: fotos + difuminado)
-   ================================ */
+/* =========================
+   FONDO ULTRA LIGERO (SIN FOTOS)
+   ========================= */
 .photoBg{
-  position: fixed;
-  inset: 0;
-  z-index: -10;
-  overflow: hidden;
-  background: var(--bg); /* fallback mientras carga */
-}
-
-.photoLayer{
-  position: absolute;
-  inset: -50px;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-
-  /* look elegante: blur + zoom suave */
-  transform: scale(1.10);
-  filter: blur(14px) saturate(1.10) contrast(1.05);
-  opacity: 0;
-  transition: opacity 1100ms ease-in-out;
-}
-
-.photoLayer.isOn{ opacity: 1; }
-
-.photoOverlay{
-  position: absolute;
-  inset: 0;
-
-  /* overlay CLARO (no negro), con tintes de marca */
+  position:fixed; inset:0;
+  z-index:-10;
+  overflow:hidden;
   background:
-    radial-gradient(900px 650px at 16% 18%, rgba(124,92,255,.18), transparent 60%),
-    radial-gradient(1000px 700px at 84% 22%, rgba(52,211,153,.12), transparent 62%),
-    radial-gradient(1000px 800px at 50% 92%, rgba(96,165,250,.10), transparent 64%),
-    linear-gradient(180deg, rgba(10,12,20,.18) 0%, rgba(10,12,20,.48) 72%, rgba(10,12,20,.60) 100%);
-
-  backdrop-filter: blur(2px);
+    radial-gradient(900px 700px at 12% 18%, rgba(124,92,255,.22), transparent 60%),
+    radial-gradient(900px 700px at 86% 24%, rgba(52,211,153,.16), transparent 62%),
+    radial-gradient(1100px 900px at 50% 92%, rgba(96,165,250,.14), transparent 64%),
+    linear-gradient(180deg, #0b0d18 0%, #0a0c14 55%, #070812 100%);
+}
+.photoLayer{ display:none !important; }
+.photoOverlay{
+  position:absolute; inset:0;
+  background: linear-gradient(180deg, rgba(10,12,20,.20) 0%, rgba(10,12,20,.62) 75%, rgba(10,12,20,.78) 100%);
   pointer-events:none;
 }
 
-@media (prefers-reduced-motion: reduce){
-  .photoLayer{ transition: none; }
-}
-
-/* ===== Topbar (mobile-first) ===== */
+/* ===== Topbar (store) ===== */
 .topbar{
-  position: sticky; top:0; z-index:40;
+  position:sticky; top:0; z-index:40;
   background: rgba(14,16,26,.46);
   backdrop-filter: blur(14px);
   border-bottom:1px solid rgba(255,255,255,.10);
@@ -228,7 +183,7 @@ button, input, select, textarea { font:inherit; }
 .logo{
   display:flex; align-items:center; gap:10px;
   font-weight:800; letter-spacing:.3px;
-  position: relative;
+  position:relative;
 }
 .logo .dot{
   width:14px; height:14px; border-radius:6px;
@@ -255,7 +210,6 @@ button, input, select, textarea { font:inherit; }
   padding:0 6px;
   border:1px solid rgba(255,255,255,.2);
 }
-
 .searchRow{ display:flex; gap:10px; }
 .searchRow .input{ flex:1; }
 .searchRow .btn{ white-space:nowrap; }
@@ -269,44 +223,28 @@ button, input, select, textarea { font:inherit; }
   border-radius: var(--radius2);
   box-shadow: var(--shadow);
   padding:16px;
-  position: relative;
+  position:relative;
   overflow:hidden;
 }
 .heroCard::before{
   content:"";
-  position:absolute;
-  inset:-2px;
+  position:absolute; inset:-2px;
   background:
     radial-gradient(420px 280px at 14% 18%, rgba(124,92,255,.22), transparent 60%),
     radial-gradient(420px 280px at 86% 36%, rgba(52,211,153,.14), transparent 62%);
   opacity:.95;
   z-index:-1;
 }
-.heroTitle{
-  margin:0 0 6px;
-  font-size:1.28rem;
-  line-height:1.22;
-  letter-spacing:.2px;
-}
-.heroText{
-  margin:0;
-  color:rgba(238,241,255,.68);
-  font-size:.98rem;
-}
-.chips{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top:10px;
-}
+.heroTitle{ margin:0 0 6px; font-size:1.28rem; line-height:1.22; letter-spacing:.2px; }
+.heroText{ margin:0; color:rgba(238,241,255,.68); font-size:.98rem; }
+.chips{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
 .chip{
   border:1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.06);
   padding:8px 10px;
-  border-radius: 999px;
+  border-radius:999px;
   font-size:.82rem;
   color: rgba(238,241,255,.88);
-  backdrop-filter: blur(12px);
 }
 
 /* ===== Filters ===== */
@@ -322,24 +260,8 @@ button, input, select, textarea { font:inherit; }
   display:flex; align-items:center; justify-content:space-between;
   padding:12px 14px;
 }
-.filtersBody{
-  padding:12px 14px 14px;
-  display:grid;
-  gap:12px;
-  transition: max-height .25s ease, opacity .18s ease, transform .18s ease;
-}
-.filtersBody.hidden{
-  max-height: 0 !important;
-  opacity: 0;
-  transform: translateY(-6px);
-  padding-top:0 !important;
-  padding-bottom:0 !important;
-}
-.filtersBody .grid2{
-  display:grid;
-  grid-template-columns:1fr;
-  gap:12px;
-}
+.filtersBody{ padding:12px 14px 14px; display:grid; gap:12px; }
+.filtersBody .grid2{ display:grid; grid-template-columns:1fr; gap:12px; }
 .filtersBody label{
   display:block;
   font-size:.85rem;
@@ -351,7 +273,7 @@ button, input, select, textarea { font:inherit; }
 .grid{
   margin-top:14px;
   display:grid;
-  grid-template-columns: 1fr;
+  grid-template-columns:1fr;
   gap:12px;
 }
 .card{
@@ -363,11 +285,7 @@ button, input, select, textarea { font:inherit; }
   box-shadow: var(--shadow2);
   transition: transform .14s ease, box-shadow .18s ease, border .18s ease;
 }
-.card:hover{
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-  border-color: rgba(255,255,255,.16);
-}
+.card:hover{ transform: translateY(-2px); box-shadow: var(--shadow); border-color: rgba(255,255,255,.16); }
 .cardMedia{
   aspect-ratio: 4/3;
   background: rgba(255,255,255,.03);
@@ -376,24 +294,11 @@ button, input, select, textarea { font:inherit; }
 }
 .cardMedia img{ width:100%; height:100%; object-fit:cover; transform: scale(1.02); transition: transform .25s ease; }
 .card:hover .cardMedia img{ transform: scale(1.05); }
-
-.cardBody{
-  padding:14px;
-  display:grid;
-  gap:12px;
-}
-.cardTitle{
-  margin:0;
-  font-size:1.05rem;
-  line-height:1.25;
-}
+.cardBody{ padding:14px; display:grid; gap:12px; }
+.cardTitle{ margin:0; font-size:1.05rem; line-height:1.25; }
 .priceRow{ display:flex; gap:10px; align-items:baseline; justify-content:space-between; }
 .priceMain{ font-weight:900; letter-spacing:.2px; }
-.priceOld{
-  color: rgba(238,241,255,.55);
-  text-decoration: line-through;
-  font-size:.9rem;
-}
+.priceOld{ color: rgba(238,241,255,.55); text-decoration: line-through; font-size:.9rem; }
 .cardBadges{ display:flex; gap:8px; flex-wrap:wrap; }
 .cardActions{ display:flex; gap:10px; }
 
@@ -404,8 +309,10 @@ button, input, select, textarea { font:inherit; }
   z-index:60;
   display:none;
 }
+.drawerBackdrop.open{ display:block; }
 .drawer{
-  position:fixed; top:0; right:0; height:100%; width:min(420px, 92vw);
+  position:fixed; top:0; right:0; height:100%;
+  width:min(420px, 92vw);
   background: rgba(14,16,26,.86);
   backdrop-filter: blur(18px);
   border-left:1px solid rgba(255,255,255,.12);
@@ -415,17 +322,14 @@ button, input, select, textarea { font:inherit; }
   display:flex; flex-direction:column;
 }
 .drawer.open{ transform: translateX(0); }
-.drawerBackdrop.open{ display:block; }
 .drawerHeader{
-  padding:14px 14px;
+  padding:14px;
   border-bottom:1px solid rgba(255,255,255,.12);
   display:flex; align-items:center; justify-content:space-between;
 }
-.drawerBody{
-  padding:14px;
-  overflow:auto;
-  display:grid; gap:12px;
-}
+.drawerBody{ padding:14px; overflow:auto; display:grid; gap:12px; }
+.drawerFooter{ padding:14px; border-top:1px solid rgba(255,255,255,.12); display:grid; gap:10px; }
+
 .cartItem{
   border:1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.05);
@@ -452,11 +356,6 @@ button, input, select, textarea { font:inherit; }
 .qtyNumber{ min-width:22px; text-align:center; font-weight:850; }
 .cartLine{ display:flex; align-items:center; justify-content:space-between; color:rgba(238,241,255,.62); }
 .cartTotal{ display:flex; align-items:center; justify-content:space-between; font-weight:900; font-size:1.05rem; }
-.drawerFooter{
-  padding:14px;
-  border-top:1px solid rgba(255,255,255,.12);
-  display:grid; gap:10px;
-}
 
 /* ===== Modal ===== */
 .modalBackdrop{
@@ -470,7 +369,7 @@ button, input, select, textarea { font:inherit; }
   position:fixed; left:50%; top:50%;
   transform: translate(-50%,-50%);
   width:min(860px, 92vw);
-  max-height: 86vh;
+  max-height:86vh;
   overflow:auto;
   border:1px solid rgba(255,255,255,.12);
   background: rgba(14,16,26,.86);
@@ -483,9 +382,9 @@ button, input, select, textarea { font:inherit; }
 .modal.open{ display:block; }
 .modalInner{ padding:14px; display:grid; gap:12px; }
 .modalHeader{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
-.modalGrid{ display:grid; grid-template-columns: 1fr; gap:12px; }
+.modalGrid{ display:grid; grid-template-columns:1fr; gap:12px; }
 .modalMedia{
-  border-radius: 22px;
+  border-radius:22px;
   overflow:hidden;
   border:1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.03);
@@ -496,12 +395,12 @@ button, input, select, textarea { font:inherit; }
 .modalTitle{ margin:0; font-size:1.18rem; }
 .modalDesc{ margin:0; color:rgba(238,241,255,.64); line-height:1.45; }
 .pillRow{ display:flex; gap:8px; flex-wrap:wrap; }
-.variantGrid{ display:grid; grid-template-columns: 1fr; gap:12px; }
+.variantGrid{ display:grid; grid-template-columns:1fr; gap:12px; }
 .variantGrid label{ font-size:.85rem; color:rgba(238,241,255,.55); margin-bottom:6px; display:block; }
 .priceBox{
   border:1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.05);
-  border-radius: 20px;
+  border-radius:20px;
   padding:12px;
   display:flex; align-items:center; justify-content:space-between; gap:10px;
 }
@@ -524,7 +423,7 @@ button, input, select, textarea { font:inherit; }
   border:1px solid rgba(255,255,255,.12);
   background: rgba(14,16,26,.86);
   backdrop-filter: blur(18px);
-  border-radius: 18px;
+  border-radius:18px;
   padding:12px 14px;
   box-shadow: var(--shadow2);
   display:flex;
@@ -556,12 +455,9 @@ button, input, select, textarea { font:inherit; }
   align-items:center;
   justify-content:space-between;
 }
-.mobileBar .btn{
-  border-radius: 18px;
-  padding: 12px 14px;
-}
+.mobileBar .btn{ border-radius:18px; padding:12px 14px; }
 .mobileBar .btn.primary{ flex:1; }
-.mobileBar .btn.ghost{ width: 120px; }
+.mobileBar .btn.ghost{ width:120px; }
 @media (min-width: 700px){ .mobileBar{ display:none; } }
 
 /* ===== Store footer ===== */
@@ -570,50 +466,46 @@ button, input, select, textarea { font:inherit; }
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding: 12px 14px;
+  padding:12px 14px;
   border:1px solid rgba(255,255,255,.12);
   background: rgba(17,19,26,.44);
   backdrop-filter: blur(14px);
-  border-radius: 18px;
+  border-radius:18px;
 }
-.adminLink{
-  font-size:.85rem;
-  color: rgba(238,241,255,.60);
-  border:1px solid rgba(255,255,255,.12);
-  padding: 8px 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.04);
-}
-.adminLink:hover{ color: rgba(238,241,255,.85); }
 
-/* ===== Admin layout ===== */
-.adminShell{
-  min-height:100vh;
-  display:grid;
-  grid-template-columns: 1fr;
-}
+/* ===== Admin ===== */
+.adminShell{ min-height:100dvh; display:grid; grid-template-columns:1fr; }
+
 .adminTop{
   position:sticky; top:0; z-index:50;
   background: rgba(14,16,26,.46);
   backdrop-filter: blur(14px);
   border-bottom:1px solid rgba(255,255,255,.10);
+  padding:10px 0;
+  min-height:54px;
 }
 .adminTop .inner{
   max-width:var(--max);
   margin:0 auto;
-  padding:12px 16px;
+  padding:0 12px;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:12px;
+  gap:10px;
 }
+.adminTop .logo{ font-size:14px; line-height:1.1; }
+
 .adminGrid{
   max-width:var(--max);
-  margin:0 auto;
-  padding:16px;
+  margin:14px auto 96px;
+  padding:0 12px;
   display:grid;
-  gap:12px;
+  grid-template-columns:1fr;
+  gap:14px;
+  justify-items:center; /* centra login */
+  align-items:start;
 }
+
 .panel{
   border:1px solid rgba(255,255,255,.12);
   background: rgba(17,19,26,.52);
@@ -623,13 +515,16 @@ button, input, select, textarea { font:inherit; }
   padding:14px;
 }
 .panel h2{ margin:0 0 10px; font-size:1.05rem; }
+
+#loginPanel{ width:min(520px, 100%); justify-self:center; margin-top:16px; }
+
 .formGrid{ display:grid; gap:12px; }
-.formGrid .grid2{ display:grid; grid-template-columns: 1fr; gap:12px; }
-.helper{ color:rgba(238,241,255,.55); font-size:.85rem; margin-top:6px; }
+.formGrid .grid2{ display:grid; grid-template-columns:1fr; gap:12px; }
+
 .pillInput{
   display:flex; gap:10px; flex-wrap:wrap;
   border:1px solid rgba(255,255,255,.12);
-  border-radius: 18px;
+  border-radius:18px;
   padding:10px;
   background: rgba(255,255,255,.04);
   backdrop-filter: blur(12px);
@@ -641,17 +536,16 @@ button, input, select, textarea { font:inherit; }
 .pill{
   display:inline-flex; align-items:center; gap:8px;
   padding:7px 10px;
-  border-radius: 999px;
+  border-radius:999px;
   border:1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.04);
-  backdrop-filter: blur(10px);
 }
 .pill button{ border:none; background:transparent; color:rgba(238,241,255,.60); cursor:pointer; padding:0; }
 
 .table{ display:grid; gap:10px; }
 .prodRow{
   border:1px solid rgba(255,255,255,.12);
-  border-radius: 22px;
+  border-radius:22px;
   background: rgba(17,19,26,.52);
   backdrop-filter: blur(14px);
   padding:12px;
@@ -660,7 +554,8 @@ button, input, select, textarea { font:inherit; }
 }
 .prodRowTop{ display:flex; gap:12px; align-items:center; }
 .prodRowThumb{
-  width:56px; height:56px; border-radius:16px; overflow:hidden;
+  width:56px; height:56px; border-radius:16px;
+  overflow:hidden;
   border:1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.03);
 }
@@ -672,12 +567,11 @@ button, input, select, textarea { font:inherit; }
 
 .preview{
   border:1px dashed rgba(255,255,255,.20);
-  border-radius: 22px;
+  border-radius:22px;
   overflow:hidden;
   background: rgba(255,255,255,.03);
   aspect-ratio: 4/3;
   display:flex; align-items:center; justify-content:center;
-  backdrop-filter: blur(10px);
 }
 .preview img{ width:100%; height:100%; object-fit:cover; }
 
@@ -689,176 +583,36 @@ button, input, select, textarea { font:inherit; }
   .grid{ grid-template-columns: repeat(2, 1fr); gap:14px; }
   .modalGrid{ grid-template-columns: 1.05fr .95fr; align-items:start; }
   .variantGrid{ grid-template-columns: 1fr 1fr; }
-  .adminGrid{ grid-template-columns: 1fr 1fr; align-items:start; }
+  .adminGrid{ grid-template-columns: 1fr 1fr; justify-items:stretch; }
   .formGrid .grid2{ grid-template-columns: 1fr 1fr; }
 }
-@media (min-width: 980px){ .grid{ grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 980px){
+  .grid{ grid-template-columns: repeat(3, 1fr); }
+  .adminGrid{ grid-template-columns: 1.15fr .85fr; }
+  #loginPanel{ grid-column: 1 / -1; width:min(560px, 100%); justify-self:center; }
+}
 @media (min-width: 1200px){ .grid{ grid-template-columns: repeat(4, 1fr); } }
 
-
 /* =========================
-   ADMIN: AppBar más compacto + Login centrado
-   Pegar al FINAL de styles.css
+   PERF MODE (Android / móvil)
+   Quita blur/backdrop-filter en elementos repetidos
    ========================= */
-
-.adminShell{
-  min-height: 100dvh;
-}
-
-/* AppBar más pequeño */
-.adminTop{
-  position: sticky; top: 0;
-  padding: 10px 0 !important;      /* antes estaba muy grande */
-  min-height: 54px;                /* altura compacta */
-  z-index: 20;
-}
-
-/* Contenido del AppBar alineado y con menos espacio lateral */
-.adminTop .inner{
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 12px !important;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-/* Reduce un poco el tamaño visual del logo en admin */
-.adminTop .logo{
-  font-size: 14px;
-  line-height: 1.1;
-}
-
-/* Grid principal: centra items (incluye login) */
-.adminGrid{
-  max-width: 1100px;
-  margin: 14px auto 96px;
-  padding: 0 12px;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
-  justify-items: center;   /* <-- esto centra el login */
-  align-items: start;
-}
-
-/* Login centrado y con ancho bonito */
-#loginPanel{
-  width: min(520px, 100%);
-  justify-self: center;
-  margin-top: 16px;
-}
-
-/* En escritorio: cuando ya estás logueado (editor + lista),
-   que se vean en 2 columnas y NO centrados */
-@media (min-width: 980px){
-  .adminGrid{
-    grid-template-columns: 1.15fr 0.85fr;
-    justify-items: stretch; /* vuelve a layout normal en desktop */
-    align-items: start;
-  }
-
-  #loginPanel{
-    grid-column: 1 / -1;  /* si está visible, ocupa todo y queda centrado */
-    justify-self: center;
-    width: min(560px, 100%);
-  }
-}
-
-
-/* =========================
-   PERF MODE (móvil / low-end)
-   Reduce blur/filtros/sombras que causan lag en Android
-   ========================= */
-
-.photoBg, .photoLayer, .photoOverlay{
-  will-change: opacity, transform;
-  transform: translateZ(0);
-}
-
-/* 1) El blur en la FOTO es lo más pesado.
-      En móvil lo apagamos (la suavidad queda por el overlay) */
 @media (max-width: 700px){
-  .photoLayer{
-    inset: 0 !important;
-    transform: scale(1.02) !important;
-    filter: none !important;
+  .card,.cartItem,.prodRow,.badge,.btn,
+  .input,.select,.textarea,.pill,.pillInput,.preview,.toast{
+    backdrop-filter:none !important;
+    -webkit-backdrop-filter:none !important;
   }
-  .photoOverlay{
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    opacity: .82;
-  }
-}
-
-/* 2) Backdrop-filter en MUCHAS tarjetas = lag.
-      En móvil lo quitamos de elementos repetidos */
-@media (max-width: 700px){
-  .card,
-  .cartItem,
-  .prodRow,
-  .badge,
-  .btn,
-  .input, .select, .textarea,
-  .pill, .pillInput,
-  .preview{
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-
-  /* mantenemos look premium con fondo más sólido (sin blur) */
-  .card,
-  .panel,
-  .prodRow,
-  .cartItem,
-  .preview{
+  .card,.panel,.prodRow,.cartItem,.preview{
     background: rgba(17,19,26,.72) !important;
   }
-
-  /* sombras más livianas */
-  .card, .panel, .prodRow, .cartItem, .toast{
+  .card,.panel,.prodRow,.cartItem,.toast{
     box-shadow: 0 8px 22px rgba(0,0,0,.22) !important;
   }
 }
 
-/* 3) Render eficiente: no pintes cards fuera de pantalla */
+/* Render eficiente: no pintes cards fuera de pantalla */
 @supports (content-visibility: auto){
-  .card{
-    content-visibility: auto;
-    contain-intrinsic-size: 340px 520px;
-  }
-  .prodRow{
-    content-visibility: auto;
-    contain-intrinsic-size: 120px 160px;
-  }
-}
-
-/* 4) Respeta reduce motion */
-@media (prefers-reduced-motion: reduce){
-  .photoLayer{ transition: none !important; }
-}
-
-/* =========================
-   FONDO SOLO COLORES (SIN FOTOS) - ultra rendimiento
-   Pegar al FINAL de styles.css
-   ========================= */
-
-/* Apagamos capas de fotos */
-.photoLayer{ display:none !important; }
-
-/* Fondo aurora por gradientes (sin blur) */
-.photoBg{
-  background:
-    radial-gradient(900px 700px at 12% 18%, rgba(124,92,255,.22), transparent 60%),
-    radial-gradient(900px 700px at 86% 24%, rgba(52,211,153,.16), transparent 62%),
-    radial-gradient(1100px 900px at 50% 92%, rgba(96,165,250,.14), transparent 64%),
-    linear-gradient(180deg, #0b0d18 0%, #0a0c14 55%, #070812 100%) !important;
-}
-
-/* Overlay más simple (barato) */
-.photoOverlay{
-  background:
-    linear-gradient(180deg, rgba(10,12,20,.22) 0%, rgba(10,12,20,.62) 75%, rgba(10,12,20,.78) 100%) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  .card{ content-visibility:auto; contain-intrinsic-size: 340px 520px; }
+  .prodRow{ content-visibility:auto; contain-intrinsic-size: 120px 160px; }
 }
