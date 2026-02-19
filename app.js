@@ -1,76 +1,8 @@
 import { supabase } from "./supabaseClient.js";
 
 const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-const USE_PHOTO_BG = false;
-if (USE_PHOTO_BG) initPhotoBackgroundSlideshow(PHOTO_BG_URLS, 9000);
 
 
-// ===== Photo Background Slideshow (index.html) =====
-// Requiere en el HTML:
-// <div class="photoBg"><div class="photoLayer isOn" id="bgA"></div><div class="photoLayer" id="bgB"></div><div class="photoOverlay"></div></div>
-//
-// Recomendación: usa imágenes locales para mejor rendimiento:
-// const PHOTO_BG_URLS = ["./assets/bg/1.jpg", "./assets/bg/2.jpg", "./assets/bg/3.jpg"];
-const PHOTO_BG_URLS = [
-  "./img/1.jpg",
-  "./img/2.jpg",
-  "./img/3.jpg",
-  "./img/4.jpg",
-];
-
-
-function initPhotoBackgroundSlideshow(urls, intervalMs = 9000) {
-  const a = document.getElementById("bgA");
-  const b = document.getElementById("bgB");
-  if (!a || !b || !Array.isArray(urls) || urls.length === 0) return;
-
-  // Si reduce motion, dejamos 1 sola imagen (accesibilidad)
-  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-  if (reduceMotion) {
-    a.style.backgroundImage = `url("${urls[0]}")`;
-    a.classList.add("isOn");
-    b.classList.remove("isOn");
-    return;
-  }
-
-  let i = 0;
-  let showA = true;
-
-  // Primera imagen
-  a.style.backgroundImage = `url("${urls[0]}")`;
-  a.classList.add("isOn");
-  b.classList.remove("isOn");
-
-  // Preload helper para evitar parpadeo
-  const preload = (src) =>
-    new Promise((res) => {
-      const img = new Image();
-      img.onload = () => res(true);
-      img.onerror = () => res(false);
-      img.src = src;
-    });
-
-  // Pre-carga la siguiente imagen para que el primer cambio sea suave
-  if (urls.length > 1) preload(urls[1]);
-
-  setInterval(async () => {
-    i = (i + 1) % urls.length;
-    const nextUrl = urls[i];
-
-    await preload(nextUrl);
-
-    const on = showA ? a : b;
-    const off = showA ? b : a;
-
-    off.style.backgroundImage = `url("${nextUrl}")`;
-
-    requestAnimationFrame(() => {
-      off.classList.add("isOn");
-      on.classList.remove("isOn");
-      showA = !showA;
-    });
-  }, intervalMs);
-}
 
 /** UI helpers */
 const $ = (id) => document.getElementById(id);
@@ -103,6 +35,19 @@ function calcFinalPrice(basePrice, extra, discountPercent) {
   const disc = Math.max(0, Math.min(100, discountPercent || 0));
   const final = Math.round(pre * (1 - disc / 100));
   return { pre, final, disc };
+}
+
+function checkAdminShortcutFromInput(raw) {
+  // Works reliably on mobile keyboards (input event) and desktop.
+  const norm = String(raw || "").trim().toLowerCase().replace(/\s+/g, "");
+  if (norm !== "admin") return false;
+
+  toast("Acceso Admin…", "success");
+  const si = document.getElementById("searchInput");
+  if (si) si.value = "";
+  // Small delay so the toast can paint before navigation.
+  setTimeout(() => { window.location.href = "./admin.html"; }, 120);
+  return true;
 }
 
 /** State */
@@ -570,8 +515,18 @@ function wireEvents() {
   toggleBtn.addEventListener("click", () => setOpen(!open));
 
   $("searchInput").addEventListener("input", (e) => {
-    state.q = e.target.value || "";
+    const val = e.target.value || "";
+    // Shortcut: typing "admin" in the search box (works on mobile)
+    if (checkAdminShortcutFromInput(val)) return;
+
+    state.q = val;
     applyFiltersRender();
+  });
+
+  // Some mobile keyboards fire "search" instead of keydown/enter
+  $("searchInput").addEventListener("search", (e) => {
+    const val = e.target.value || "";
+    if (checkAdminShortcutFromInput(val)) return;
   });
 
   $("categorySelect").addEventListener("change", (e) => {
@@ -722,10 +677,25 @@ function wireEvents() {
 
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Inicia el fondo con fotos si existe el bloque en el HTML (bgA/bgB)
-  initPhotoBackgroundSlideshow(PHOTO_BG_URLS, 9000);
+  try {
+    
 
-  wireEvents();
-  renderCart();
-  await fetchCatalog();
+    // UI
+    wireEvents();
+    renderCart();
+
+    // Catálogo
+    await fetchCatalog();
+  } catch (err) {
+    console.error("Init error:", err);
+    // Intento suave de mostrar algo en UI
+    try {
+      const rc = document.getElementById("resultCount");
+      if (rc) rc.textContent = "Error";
+      const lb = document.getElementById("loadingBar");
+      if (lb) lb.classList.add("hidden");
+      toast("Error inicializando la tienda: " + (err?.message || err), "error", 6000);
+    } catch {}
+  }
 });
+
