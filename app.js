@@ -2,8 +2,6 @@ import { supabase } from "./supabaseClient.js";
 
 const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
-
-
 /** UI helpers */
 const $ = (id) => document.getElementById(id);
 
@@ -37,16 +35,33 @@ function calcFinalPrice(basePrice, extra, discountPercent) {
   return { pre, final, disc };
 }
 
+function goToAdmin() {
+  // Robust relative navigation (works in subfolders too)
+  try {
+    const url = new URL("./admin.html", window.location.href).href;
+    window.location.assign(url);
+  } catch {
+    window.location.href = "./admin.html";
+  }
+}
+
+function normalizeShortcut(raw) {
+  // Remove accents, spaces, punctuation and weird IME chars.
+  return String(raw || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
 function checkAdminShortcutFromInput(raw) {
-  // Works reliably on mobile keyboards (input event) and desktop.
-  const norm = String(raw || "").trim().toLowerCase().replace(/\s+/g, "");
+  const norm = normalizeShortcut(raw);
   if (norm !== "admin") return false;
 
-  toast("Acceso Admin…", "success");
   const si = document.getElementById("searchInput");
   if (si) si.value = "";
-  // Small delay so the toast can paint before navigation.
-  setTimeout(() => { window.location.href = "./admin.html"; }, 120);
+
+  goToAdmin();
   return true;
 }
 
@@ -514,20 +529,30 @@ function wireEvents() {
 
   toggleBtn.addEventListener("click", () => setOpen(!open));
 
-  $("searchInput").addEventListener("input", (e) => {
-    const val = e.target.value || "";
-    // Shortcut: typing "admin" in the search box (works on mobile)
-    if (checkAdminShortcutFromInput(val)) return;
+  
+// Search input (debounced) + Admin shortcut (mobile-safe)
+const searchEl = $("searchInput");
+let searchTimer = null;
 
-    state.q = val;
-    applyFiltersRender();
-  });
+const handleSearchValue = () => {
+  const val = searchEl?.value || "";
+  if (checkAdminShortcutFromInput(val)) return;
 
-  // Some mobile keyboards fire "search" instead of keydown/enter
-  $("searchInput").addEventListener("search", (e) => {
-    const val = e.target.value || "";
-    if (checkAdminShortcutFromInput(val)) return;
+  state.q = val;
+  if (searchTimer) clearTimeout(searchTimer);
+  // Debounce improves performance on mobile when there are many products
+  searchTimer = setTimeout(() => applyFiltersRender(), 120);
+};
+
+if (searchEl) {
+  searchEl.addEventListener("input", handleSearchValue, { passive: true });
+  searchEl.addEventListener("change", handleSearchValue);
+  searchEl.addEventListener("search", handleSearchValue);
+  searchEl.addEventListener("compositionend", handleSearchValue);
+  searchEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") handleSearchValue();
   });
+}
 
   $("categorySelect").addEventListener("change", (e) => {
     state.category = (e.target.value || "").toLowerCase();
@@ -678,7 +703,8 @@ function wireEvents() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    
+    // Fondo con fotos (si existe bgA/bgB)
+    initPhotoBackgroundSlideshow(PHOTO_BG_URLS, 9000);
 
     // UI
     wireEvents();
