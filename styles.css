@@ -764,3 +764,77 @@ button, input, select, textarea { font:inherit; }
     width: min(560px, 100%);
   }
 }
+
+
+/* =========================
+   PERF MODE (móvil / low-end)
+   Reduce blur/filtros/sombras que causan lag en Android
+   ========================= */
+
+.photoBg, .photoLayer, .photoOverlay{
+  will-change: opacity, transform;
+  transform: translateZ(0);
+}
+
+/* 1) El blur en la FOTO es lo más pesado.
+      En móvil lo apagamos (la suavidad queda por el overlay) */
+@media (max-width: 700px){
+  .photoLayer{
+    inset: 0 !important;
+    transform: scale(1.02) !important;
+    filter: none !important;
+  }
+  .photoOverlay{
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    opacity: .82;
+  }
+}
+
+/* 2) Backdrop-filter en MUCHAS tarjetas = lag.
+      En móvil lo quitamos de elementos repetidos */
+@media (max-width: 700px){
+  .card,
+  .cartItem,
+  .prodRow,
+  .badge,
+  .btn,
+  .input, .select, .textarea,
+  .pill, .pillInput,
+  .preview{
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* mantenemos look premium con fondo más sólido (sin blur) */
+  .card,
+  .panel,
+  .prodRow,
+  .cartItem,
+  .preview{
+    background: rgba(17,19,26,.72) !important;
+  }
+
+  /* sombras más livianas */
+  .card, .panel, .prodRow, .cartItem, .toast{
+    box-shadow: 0 8px 22px rgba(0,0,0,.22) !important;
+  }
+}
+
+/* 3) Render eficiente: no pintes cards fuera de pantalla */
+@supports (content-visibility: auto){
+  .card{
+    content-visibility: auto;
+    contain-intrinsic-size: 340px 520px;
+  }
+  .prodRow{
+    content-visibility: auto;
+    contain-intrinsic-size: 120px 160px;
+  }
+}
+
+/* 4) Respeta reduce motion */
+@media (prefers-reduced-motion: reduce){
+  .photoLayer{ transition: none !important; }
+}
+
