@@ -12,11 +12,15 @@
   <header class="topbar" role="banner">
     <div class="inner">
       <div class="brand">
-        <a class="logo" href="./index.html" aria-label="Ir a inicio">
+        <a id="brandLogo" class="logo" href="./index.html" aria-label="Ir a inicio (mantén presionado para Admin)">
           <span class="dot" aria-hidden="true"></span>
           <span>ACCESORIOS</span>
           <span class="muted tiny">/ minimal</span>
+
+         <!-- Hotspot invisible: no se ve, pero sirve para tocar/click -->
+        <span class="adminHotspot" aria-hidden="true"></span>
         </a>
+
 
         <button id="cartOpenBtn" class="btn icon cartBtn" aria-label="Abrir carrito">
           <span aria-hidden="true">🛒</span>
@@ -38,6 +42,11 @@
       <div class="heroCard">
         <h1 class="heroTitle">Accesorios elegantes, sin ruido.</h1>
         <p class="heroText">Elige tu estilo. Selecciona talla y color. Precios en COP con descuento automático.</p>
+         <div class="chips" aria-label="Beneficios">
+           <span class="chip">Envío rápido</span>
+           <span class="chip">Descuentos automáticos</span>
+           <span class="chip">Variantes: talla y color</span>
+         </div>
       </div>
     </section>
 
@@ -109,6 +118,14 @@
         <p class="muted" style="margin:0;">Prueba con otra búsqueda o limpia filtros.</p>
       </div>
     </section>
+
+    <footer class="storeFooter" aria-label="Pie de página">
+      <div class="storeFooterInner">
+      <span class="muted tiny">© <span id="yearNow"></span> Accesorios</span>
+      <a class="adminLink" href="./admin.html" aria-label="Entrar al panel admin">Admin</a>
+      </div>
+    </footer>
+ 
   </main>
 
   <!-- Drawer carrito -->
@@ -200,6 +217,12 @@
   </section>
 
   <div id="toasts" class="toasts" aria-live="polite" aria-atomic="true"></div>
+  <!-- Bottom bar mobile: acceso rápido -->
+<div class="mobileBar" aria-label="Acciones rápidas (móvil)">
+  <button id="mobileCartBtn" class="btn primary" aria-label="Abrir carrito (móvil)">🛒 Carrito</button>
+  <button id="mobileFiltersBtn" class="btn ghost" aria-label="Mostrar u ocultar filtros">Filtros</button>
+</div>
+
 
   <script type="module" src="./app.js"></script>
 </body>
