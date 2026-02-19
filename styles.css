@@ -838,3 +838,27 @@ button, input, select, textarea { font:inherit; }
   .photoLayer{ transition: none !important; }
 }
 
+/* =========================
+   FONDO SOLO COLORES (SIN FOTOS) - ultra rendimiento
+   Pegar al FINAL de styles.css
+   ========================= */
+
+/* Apagamos capas de fotos */
+.photoLayer{ display:none !important; }
+
+/* Fondo aurora por gradientes (sin blur) */
+.photoBg{
+  background:
+    radial-gradient(900px 700px at 12% 18%, rgba(124,92,255,.22), transparent 60%),
+    radial-gradient(900px 700px at 86% 24%, rgba(52,211,153,.16), transparent 62%),
+    radial-gradient(1100px 900px at 50% 92%, rgba(96,165,250,.14), transparent 64%),
+    linear-gradient(180deg, #0b0d18 0%, #0a0c14 55%, #070812 100%) !important;
+}
+
+/* Overlay más simple (barato) */
+.photoOverlay{
+  background:
+    linear-gradient(180deg, rgba(10,12,20,.22) 0%, rgba(10,12,20,.62) 75%, rgba(10,12,20,.78) 100%) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
