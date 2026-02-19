@@ -2,12 +2,20 @@
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Admin | Accesorios</title>
   <meta name="description" content="Panel admin para gestionar productos." />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
+
+  <!-- Photo background (slideshow) -->
+  <div class="photoBg" aria-hidden="true">
+    <div class="photoLayer isOn" id="bgA"></div>
+    <div class="photoLayer" id="bgB"></div>
+    <div class="photoOverlay"></div>
+  </div>
+
   <div class="adminShell">
     <header class="adminTop" role="banner">
       <div class="inner">
