@@ -3,6 +3,9 @@ import { supabase } from "./supabaseClient.js";
 const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 const $ = (id) => document.getElementById(id);
 
+
+
+
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (m) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
 }
@@ -578,3 +581,65 @@ async function bootstrap() {
 }
 
 bootstrap();
+
+
+// ===== Photo Background Slideshow (ADMIN) =====
+const PHOTO_BG_URLS = [
+  "./img/1.jpg",
+  "./img/2.jpg",
+  "./img/3.jpg",
+  "./img/4.jpg",
+];
+
+function initPhotoBackgroundSlideshow(urls, intervalMs = 9000) {
+  const a = document.getElementById("bgA");
+  const b = document.getElementById("bgB");
+  if (!a || !b || !Array.isArray(urls) || urls.length === 0) return;
+
+  // Si reduce motion, dejamos una sola imagen
+  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  if (reduceMotion) {
+    a.style.backgroundImage = `url("${urls[0]}")`;
+    a.classList.add("isOn");
+    b.classList.remove("isOn");
+    return;
+  }
+
+  let i = 0;
+  let showA = true;
+
+  // Carga primera
+  a.style.backgroundImage = `url("${urls[0]}")`;
+  a.classList.add("isOn");
+  b.classList.remove("isOn");
+
+  // Preload helper (evita parpadeo)
+  const preload = (src) =>
+    new Promise((res) => {
+      const img = new Image();
+      img.onload = () => res(true);
+      img.onerror = () => res(false);
+      img.src = src;
+    });
+
+  setInterval(async () => {
+    i = (i + 1) % urls.length;
+    const nextUrl = urls[i];
+
+    await preload(nextUrl);
+
+    const on = showA ? a : b;
+    const off = showA ? b : a;
+
+    off.style.backgroundImage = `url("${nextUrl}")`;
+
+    requestAnimationFrame(() => {
+      off.classList.add("isOn");
+      on.classList.remove("isOn");
+      showA = !showA;
+    });
+  }, intervalMs);
+}
+
+// Arranca el fondo en admin
+initPhotoBackgroundSlideshow(PHOTO_BG_URLS, 9000);
